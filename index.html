@@ -185,6 +185,22 @@
     .volume-control {
       width: 80px;
     }
+    .song-selector {
+      display: flex;
+      gap: 5px;
+    }
+    .song-selector button {
+      background: #39657e;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 2px 5px;
+      font-size: 0.7rem;
+      cursor: pointer;
+    }
+    .song-selector button.active {
+      background: rgb(6, 60, 131);
+    }
     @media (max-width: 768px) {
       .container {
         flex-direction: column;
@@ -221,8 +237,12 @@
     <div class="music-controls">
       <button id="playPauseBtn">▶</button>
       <input type="range" id="volumeControl" class="volume-control" min="0" max="100" value="30">
+      <div class="song-selector">
+        <button id="song1Btn" class="active">Next</button>
+        <button id="song2Btn">Prev</button>
+      </div>
     </div>
-    <span>music player</span>
+    <span id="nowPlaying">Arijit Singh - Tum Hi Ho</span>
   </div>
 
   <script>
@@ -263,7 +283,22 @@
       "image2.jfif",
       "image3.jfif",
       "image4.jfif",
-    
+      "image1.jfif",
+      "image2.jfif",
+      "image3.jfif",
+      "image4.jfif",
+      "image1.jfif",
+      "image2.jfif",
+      "image3.jfif",
+      "image4.jfif",
+      "image1.jfif",
+      "image2.jfif",
+      "image3.jfif",
+      "image4.jfif",
+      "image1.jfif",
+      "image2.jfif",
+      "image3.jfif",
+      "image4.jfif",
     ];
 
     const ulEl = document.querySelector("ul");
@@ -278,6 +313,25 @@
     let player;
     const playPauseBtn = document.getElementById('playPauseBtn');
     const volumeControl = document.getElementById('volumeControl');
+    const nowPlaying = document.getElementById('nowPlaying');
+    const song1Btn = document.getElementById('song1Btn');
+    const song2Btn = document.getElementById('song2Btn');
+    
+    // Playlist configuration
+    const playlist = [
+      {
+        id: 'XVhEm62Uqog',
+        title: 'araw-araw = ben and ben',
+        btn: song1Btn
+      },
+      {
+        id: '5Gr-ZMV8F2o',
+        title: 'moving closer = never the strangers',
+        btn: song2Btn
+      }
+    ];
+    let currentSongIndex = 0;
+    let isPlayerReady = false;
 
     init();
 
@@ -304,7 +358,7 @@
       player = new YT.Player('youtube-player', {
         height: '0',
         width: '0',
-        videoId: 'cmHAzxrn_nc',
+        videoId: playlist[currentSongIndex].id,
         playerVars: {
           'autoplay': 1,
           'controls': 0,
@@ -322,30 +376,58 @@
     }
 
     function onPlayerReady(event) {
-      // Set initial volume
+      isPlayerReady = true;
       event.target.setVolume(volumeControl.value);
-      
-      // Update button based on autoplay status
       if(event.target.getPlayerState() === YT.PlayerState.PLAYING) {
         playPauseBtn.textContent = '❚❚';
       }
+      updateActiveSongButton();
     }
 
     function onPlayerStateChange(event) {
-      // Update play/pause button when state changes
       if(event.data === YT.PlayerState.PLAYING) {
         playPauseBtn.textContent = '❚❚';
       } else if(event.data === YT.PlayerState.PAUSED) {
         playPauseBtn.textContent = '▶';
+      } else if(event.data === YT.PlayerState.ENDED) {
+        playNextSong();
       }
     }
 
-    // Play/Pause button control
-    playPauseBtn.addEventListener('click', function() {
-      if(player.getPlayerState() === YT.PlayerState.PLAYING) {
-        player.pauseVideo();
-      } else {
-        player.playVideo();
+    function playNextSong() {
+      currentSongIndex = (currentSongIndex + 1) % playlist.length;
+      loadCurrentSong();
+    }
+
+    function loadCurrentSong() {
+      if(isPlayerReady) {
+        player.loadVideoById({
+          videoId: playlist[currentSongIndex].id,
+          suggestedQuality: 'default'
+        });
+        nowPlaying.textContent = playlist[currentSongIndex].title;
+        updateActiveSongButton();
+      }
+    }
+
+    function updateActiveSongButton() {
+      playlist.forEach((song, index) => {
+        song.btn.classList.toggle('active', index === currentSongIndex);
+      });
+    }
+
+    // Song selection
+    song1Btn.addEventListener('click', () => {
+      if(currentSongIndex !== 0) {
+        currentSongIndex = 0;
+        loadCurrentSong();
+      }
+    });
+
+    song2Btn.addEventListener('click', () => {
+      if(currentSongIndex !== 1) {
+        currentSongIndex = 1;
+        loadCurrentSong();
       }
     });
 
@@ -355,19 +437,14 @@
     });
 
     function createHearts() {
-      // Create 10-15 hearts in random positions
       const heartCount = 10 + Math.floor(Math.random() * 5);
-      
       for (let i = 0; i < heartCount; i++) {
         const heart = document.createElement("div");
         heart.classList.add("heart");
         heart.innerHTML = "❤️";
         
-        // Random position around the center of the screen
         const x = (Math.random() - 0.5) * window.innerWidth;
         const y = (Math.random() - 0.5) * window.innerHeight;
-        
-        // Random animation parameters
         const tx = (Math.random() - 0.5) * 200;
         const ty = -100 - Math.random() * 100;
         const s = 0.5 + Math.random();
@@ -381,11 +458,7 @@
         heart.style.color = `hsl(${Math.random() * 360}, 100%, 70%)`;
         
         document.body.appendChild(heart);
-        
-        // Remove heart after animation completes
-        setTimeout(() => {
-          heart.remove();
-        }, 2000);
+        setTimeout(() => heart.remove(), 2000);
       }
     }
 
@@ -397,32 +470,22 @@
       if (activeEl) activeEl.classList.remove("active");
       
       activeIndex = (activeIndex + nr + febHolidays.length) % febHolidays.length;
-      const newActiveEl = document.querySelector(
-        `li:nth-child(${activeIndex + 1})`
-      );
+      const newActiveEl = document.querySelector(`li:nth-child(${activeIndex + 1})`);
       
-      document.body.style.backgroundColor = window.getComputedStyle(
-        newActiveEl
-      ).backgroundColor;
+      document.body.style.backgroundColor = window.getComputedStyle(newActiveEl).backgroundColor;
       newActiveEl.classList.add("active");
       
-      // Update images
       updateImages(activeIndex);
-      
-      // Create heart fireworks
       createHearts();
     }
 
     function updateImages(index) {
-      // Remove active class first
       leftImage.classList.remove("active");
       rightImage.classList.remove("active");
       
-      // Set new images
       leftImage.innerHTML = `<img src="${friendshipImages[index]}" alt="Friendship image">`;
       rightImage.innerHTML = `<img src="${friendshipImages[(index + 5) % friendshipImages.length]}" alt="Friendship image">`;
       
-      // Add active class after a small delay to trigger animation
       setTimeout(() => {
         leftImage.classList.add("active");
         rightImage.classList.add("active");
@@ -431,14 +494,8 @@
 
     window.addEventListener("keydown", (e) => {
       switch (e.key) {
-        case "ArrowUp":
-          adjustDay(-1);
-          break;
-        case "ArrowDown":
-          adjustDay(1);
-          break;
-        default:
-          return;
+        case "ArrowUp": adjustDay(-1); break;
+        case "ArrowDown": adjustDay(1); break;
       }
     });
   </script>
