@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bud</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      font-family: sans-serif;
+      background-color: rgb(1, 1, 1);
+      background-image: linear-gradient(rgb(0, 0, 0, 0.5), rgb(0, 0, 0, 0.5));
+      color: white;
+      transition: background-color 500ms ease;
+    }
+    header {
+      position: absolute;
+      z-index: 999;
+      text-align: center;
+      top: 0rem;
+      padding: 1rem;
+      background: inherit;
+    }
+    .container {
+      position: relative;
+      width: min(800px, 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+    }
+    ul {
+      list-style: none;
+      width: 100%;
+      height: 50%;
+      position: relative;
+      perspective: 900px;
+      transform-style: preserve-3d;
+      flex: 1;
+    }
+    ul > li {
+      position: absolute;
+      left: 50%;
+      top: calc(50% - 1.2rem);
+      --rotateX: calc(
+        1deg * var(--rotateDegrees) * calc(var(--day_idx) - var(--currentDay))
+      );
+      transform: rotateX(var(--rotateX)) translateZ(190px) translateX(-50%)
+        scale(var(--scale, 1));
+      --hue: calc(var(--rotateDegrees) * var(--day_idx));
+      background-color: hsl(var(--hue), 50%, var(--lightness, 50%));
+      width: 70%;
+      color: white;
+      display: grid;
+      grid-template-columns: 2.5rem auto;
+      height: 2.4rem;
+      transition: transform 500ms ease, background-color 500ms ease;
+    }
+    ul > li.active {
+      --lightness: 30%;
+      --scale: 1.1;
+    }
+    ul > li > * {
+      display: grid;
+      align-items: center;
+    }
+    li > time {
+      text-align: center;
+    }
+    li > span {
+      padding-inline-start: 0.5rem;
+      color: white;
+    }
+    .controls {
+      position: absolute;
+      top: 50%;
+      left: 100%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+    }
+    .controls button {
+      width: 1.5rem;
+      aspect-ratio: 1;
+      font-size: 0.9rem;
+      color: white;
+      border: none;
+      background: #39657e;
+      display: flex;
+      place-items: center;
+    }
+    .controls button:hover,
+    .controls button:focus {
+      background: rgb(6, 60, 131);
+    }
+    .controls button:active {
+      transform: scale(0.9);
+    }
+    .border {
+      width: 96%;
+      height: 3em;
+      border: 1px solid white;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .image-container {
+      width: 200px;
+      height: 200px;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+      transition: all 0.5s ease;
+      opacity: 0;
+      transform: scale(0.8);
+    }
+    .image-container.active {
+      opacity: 1;
+      transform: scale(1);
+    }
+    .image-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .heart {
+      position: absolute;
+      pointer-events: none;
+      animation: heartAnimation 2s ease-out forwards;
+    }
+    @keyframes heartAnimation {
+      0% {
+        transform: translate(0, 0) scale(0);
+        opacity: 1;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        transform: translate(var(--tx), var(--ty)) scale(var(--s));
+        opacity: 0;
+      }
+    }
+    /* Music Player Styles */
+    .music-player {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1000;
+      background: rgba(0,0,0,0.7);
+      padding: 10px;
+      border-radius: 10px;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .music-controls {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .music-player button {
+      background: #39657e;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .volume-control {
+      width: 80px;
+    }
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+      .image-container {
+        width: 150px;
+        height: 150px;
+      }
+      .music-player {
+        bottom: 10px;
+        right: 10px;
+        font-size: 0.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>JASMINE</h1>BUD
+    <p>I am going Say </p>
+  </header>
+  <div class="container">
+    <div class="image-container left-image"></div>
+    <ul></ul>
+    <div class="image-container right-image"></div>
+    <div class="controls">
+      <button onclick="adjustDay(-1)">▲</button>
+      <button onclick="adjustDay(1)">▼</button>
+    </div>
+  </div>
+
+  <!-- Music Player -->
+  <div class="music-player">
+    <div class="music-controls">
+      <button id="playPauseBtn">▶</button>
+      <input type="range" id="volumeControl" class="volume-control" min="0" max="100" value="30">
+    </div>
+    <span>Ed Sheeran - Perfect</span>
+  </div>
+
+  <script>
+    const febHolidays = [
+      "Dear BUD JASMIN ❤️", 
+      "Listen To My Heart Thing",
+      "My heart beats for our friendship.",
+      "You Are The Ride Or Die Of My Life.",
+      "You Are My Partner In Crime.",
+      "You are my everything in friendship.",
+      "Always and forever.",
+      "I will never let you cry alone - I'll bring snacks and memes",
+      "Trust Me 100%😊",
+      "I find your chaotic energy absolutely amazing.",
+      "Your vibe is timeless😘.",
+      "You know one thing? Talking to you gives me peace",
+      "No matter the distance between us, I feel you're always with me",
+      "Always Take care yourself",
+      "Be Happy😊",
+      "Be Relaxed🥰",
+      "You are the most special person in my life",
+      "And trust me I don't want anyone else",
+      "if you are with me❤️",
+      "I am always here with you",
+      "Then one thing",
+      "when you share your drama with me",
+      "Wow that time I feel truly needed😊",
+      "This is for you",
+      "Roses Are Red🌹",
+      "Sky Is Blue🌃",
+      "My Friendship Is True😊",
+      "Only For You🥰",
+      "I Love You So Much Bestie❤️"
+    ];
+
+    const friendshipImages = [
+      "picture/image1.jfif",
+      "picture/image2.jfif",
+      "picture/image3.jfif",
+      "picture/image4.jfif",
+    
+    ];
+
+    const ulEl = document.querySelector("ul");
+    const leftImage = document.querySelector(".left-image");
+    const rightImage = document.querySelector(".right-image");
+    const d = new Date();
+    let daynumber = d.getMonth() == 1 ? d.getDate() - 1 : 0;
+    let activeIndex = daynumber;
+    const rotate = -360 / febHolidays.length;
+
+    // YouTube Player Variables
+    let player;
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const volumeControl = document.getElementById('volumeControl');
+
+    init();
+
+    function init() {
+      febHolidays.forEach((holiday, idx) => {
+        const liEl = document.createElement("li");
+        liEl.style.setProperty("--day_idx", idx);
+        liEl.innerHTML = `<time datetime="2022-02-${idx + 1}">${
+          idx + 1
+        }</time><span>${holiday}</span>`;
+        ulEl.append(liEl);
+      });
+      ulEl.style.setProperty("--rotateDegrees", rotate);
+      adjustDay(0);
+
+      // Load YouTube API
+      const tag = document.createElement('script');
+      tag.src = "https://www.youtube.com/iframe_api";
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    }
+
+    function onYouTubeIframeAPIReady() {
+      player = new YT.Player('youtube-player', {
+        height: '0',
+        width: '0',
+        videoId: 'cmHAzxrn_nc',
+        playerVars: {
+          'autoplay': 1,
+          'controls': 0,
+          'disablekb': 1,
+          'fs': 0,
+          'modestbranding': 1,
+          'rel': 0,
+          'showinfo': 0
+        },
+        events: {
+          'onReady': onPlayerReady,
+          'onStateChange': onPlayerStateChange
+        }
+      });
+    }
+
+    function onPlayerReady(event) {
+      // Set initial volume
+      event.target.setVolume(volumeControl.value);
+      
+      // Update button based on autoplay status
+      if(event.target.getPlayerState() === YT.PlayerState.PLAYING) {
+        playPauseBtn.textContent = '❚❚';
+      }
+    }
+
+    function onPlayerStateChange(event) {
+      // Update play/pause button when state changes
+      if(event.data === YT.PlayerState.PLAYING) {
+        playPauseBtn.textContent = '❚❚';
+      } else if(event.data === YT.PlayerState.PAUSED) {
+        playPauseBtn.textContent = '▶';
+      }
+    }
+
+    // Play/Pause button control
+    playPauseBtn.addEventListener('click', function() {
+      if(player.getPlayerState() === YT.PlayerState.PLAYING) {
+        player.pauseVideo();
+      } else {
+        player.playVideo();
+      }
+    });
+
+    // Volume control
+    volumeControl.addEventListener('input', function() {
+      player.setVolume(this.value);
+    });
+
+    function createHearts() {
+      // Create 10-15 hearts in random positions
+      const heartCount = 10 + Math.floor(Math.random() * 5);
+      
+      for (let i = 0; i < heartCount; i++) {
+        const heart = document.createElement("div");
+        heart.classList.add("heart");
+        heart.innerHTML = "❤️";
+        
+        // Random position around the center of the screen
+        const x = (Math.random() - 0.5) * window.innerWidth;
+        const y = (Math.random() - 0.5) * window.innerHeight;
+        
+        // Random animation parameters
+        const tx = (Math.random() - 0.5) * 200;
+        const ty = -100 - Math.random() * 100;
+        const s = 0.5 + Math.random();
+        
+        heart.style.left = `calc(50% + ${x}px)`;
+        heart.style.top = `calc(50% + ${y}px)`;
+        heart.style.fontSize = `${10 + Math.random() * 20}px`;
+        heart.style.setProperty("--tx", `${tx}px`);
+        heart.style.setProperty("--ty", `${ty}px`);
+        heart.style.setProperty("--s", s);
+        heart.style.color = `hsl(${Math.random() * 360}, 100%, 70%)`;
+        
+        document.body.appendChild(heart);
+        
+        // Remove heart after animation completes
+        setTimeout(() => {
+          heart.remove();
+        }, 2000);
+      }
+    }
+
+    function adjustDay(nr) {
+      daynumber += nr;
+      ulEl.style.setProperty("--currentDay", daynumber);
+      
+      const activeEl = document.querySelector("li.active");
+      if (activeEl) activeEl.classList.remove("active");
+      
+      activeIndex = (activeIndex + nr + febHolidays.length) % febHolidays.length;
+      const newActiveEl = document.querySelector(
+        `li:nth-child(${activeIndex + 1})`
+      );
+      
+      document.body.style.backgroundColor = window.getComputedStyle(
+        newActiveEl
+      ).backgroundColor;
+      newActiveEl.classList.add("active");
+      
+      // Update images
+      updateImages(activeIndex);
+      
+      // Create heart fireworks
+      createHearts();
+    }
+
+    function updateImages(index) {
+      // Remove active class first
+      leftImage.classList.remove("active");
+      rightImage.classList.remove("active");
+      
+      // Set new images
+      leftImage.innerHTML = `<img src="${friendshipImages[index]}" alt="Friendship image">`;
+      rightImage.innerHTML = `<img src="${friendshipImages[(index + 5) % friendshipImages.length]}" alt="Friendship image">`;
+      
+      // Add active class after a small delay to trigger animation
+      setTimeout(() => {
+        leftImage.classList.add("active");
+        rightImage.classList.add("active");
+      }, 10);
+    }
+
+    window.addEventListener("keydown", (e) => {
+      switch (e.key) {
+        case "ArrowUp":
+          adjustDay(-1);
+          break;
+        case "ArrowDown":
+          adjustDay(1);
+          break;
+        default:
+          return;
+      }
+    });
+  </script>
+  
+  <!-- Hidden YouTube Player -->
+  <div id="youtube-player" style="display:none;"></div>
+</body>
+</html>
